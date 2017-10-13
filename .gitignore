@@ -1,3 +1,7 @@
-*
+/*
 
-!5th-semester/TW/lab1/src/
+!.gitignore
+!.README.md
+
+**/out
+**.iml
