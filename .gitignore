@@ -1,7 +1,3 @@
-/*
-
-!.gitignore
-!.README.md
-
-**/out
-**.iml
+out/
+.idea/
+*.iml
