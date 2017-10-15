@@ -703,3 +703,163 @@ END;
 
 
 
+
+
+
+
+
+
+--7
+
+ALTER TABLE WYCIECZKI
+ADD LICZBA_WOLNYCH_MIEJSC INT;
+
+CREATE OR REPLACE PROCEDURE FIX_SLOTS_GET(proc_cursor OUT SYS_REFCURSOR) IS
+  BEGIN
+    OPEN proc_cursor FOR
+    SELECT
+      w.ID_WYCIECZKI,
+      w.LICZBA_MIEJSC
+    FROM WYCIECZKI w;
+  END;
+
+
+CREATE OR REPLACE PROCEDURE FIX_SLOTS IS
+  c_cursor SYS_REFCURSOR;
+  c_id WYCIECZKI.ID_WYCIECZKI%TYPE;
+  c_amount WYCIECZKI.LICZBA_MIEJSC%TYPE; -- DEFAULT WYCIECZKI.LICZBA_MIEJSC;
+  BEGIN
+    FIX_SLOTS_GET(proc_cursor => c_cursor);
+    LOOP
+      FETCH c_cursor
+      INTO c_id, c_amount;
+      EXIT WHEN c_cursor%NOTFOUND;
+      SELECT count(*) INTO c_amount FROM REZERWACJE r WHERE r.ID_WYCIECZKI = c_id AND r.STATUS != 'A';
+      UPDATE WYCIECZKI w
+      SET w.LICZBA_WOLNYCH_MIEJSC = w.LICZBA_MIEJSC - c_amount
+      WHERE w.ID_WYCIECZKI = c_id;
+    END LOOP;
+    CLOSE c_cursor;
+  END;
+
+
+BEGIN
+  FIX_SLOTS();
+  COMMIT;
+END;
+
+
+CREATE VIEW WYCIECZKI_MIEJSCA2 AS SELECT
+ w.ID_WYCIECZKI,
+ w.NAZWA,
+ w.KRAJ,
+ w.LICZBA_MIEJSC,
+ w.LICZBA_WOLNYCH_MIEJSC
+  FROM WYCIECZKI w;
+
+
+CREATE VIEW DOSTEPNE_WYCIECZKI2 AS SELECT
+ w.ID_WYCIECZKI,
+ w.NAZWA,
+ w.KRAJ,
+ w.LICZBA_MIEJSC,
+ w.LICZBA_WOLNYCH_MIEJSC
+  FROM WYCIECZKI w
+  WHERE  w.LICZBA_WOLNYCH_MIEJSC > 0;
+
+
+CREATE OR REPLACE PROCEDURE ZMIEN_STATUS_REZERWACJI(id_rez INT, new_status CHAR) IS
+  NO_FREE_SLOTS_EXCEPTION EXCEPTION;
+  cur_status CHAR;
+  trip_id INT;
+  BEGIN
+    SAVEPOINT start_tran;
+    BEGIN
+      SELECT r.STATUS INTO cur_status FROM REZERWACJE r WHERE r.NR_REZERWACJI = id_rez;
+      SELECT r.ID_WYCIECZKI INTO trip_id FROM REZERWACJE r WHERE r.NR_REZERWACJI = id_rez;
+
+      IF (cur_status = 'A' AND new_status != 'A' AND CHECK_FREE_SLOTS(trip_id) = FALSE) THEN
+        RAISE NO_FREE_SLOTS_EXCEPTION;
+      ELSE
+        IF (cur_status != 'A' AND new_status = 'A') THEN
+          UPDATE WYCIECZKI w
+          SET w.LICZBA_WOLNYCH_MIEJSC = w.LICZBA_WOLNYCH_MIEJSC + 1
+          WHERE w.ID_WYCIECZKI = trip_id;
+        ELSE
+          IF (cur_status = 'A' AND new_status != 'A') THEN
+            UPDATE WYCIECZKI w
+            SET w.LICZBA_WOLNYCH_MIEJSC = w.LICZBA_WOLNYCH_MIEJSC - 1
+            WHERE w.ID_WYCIECZKI = trip_id;
+          END IF;
+        END IF;
+        UPDATE REZERWACJE r
+        SET r.STATUS = new_status
+        WHERE r.NR_REZERWACJI = id_rez;
+
+        INSERT INTO REZERWACJE_LOG(ID_REZERWACJI, STATUS)
+        VALUES (id_rez, new_status);
+      END IF;
+
+      EXCEPTION
+        WHEN NO_FREE_SLOTS_EXCEPTION THEN
+          dbms_output.put_line('There are no free slots!');
+    END;
+    EXCEPTION
+      WHEN OTHERS THEN
+        ROLLBACK TO start_tran;
+        RAISE;
+  END;
+
+
+BEGIN
+  ZMIEN_STATUS_REZERWACJI(1, 'A');
+  COMMIT;
+END;
+
+
+CREATE OR REPLACE PROCEDURE DODAJ_REZERWACJE(id_wyc INT, id_os INT) IS
+  check_slots BOOLEAN;
+  trip_date DATE;
+  TRIP_ALREADY_STARTED_EXCEPTION EXCEPTION;
+  NO_FREE_SLOTS_EXCEPTION EXCEPTION;
+  nr_rezerwacji INT;
+  BEGIN
+    SAVEPOINT start_tran;
+    BEGIN
+      SELECT w.DATA INTO trip_date FROM WYCIECZKI w WHERE w.ID_WYCIECZKI = id_wyc;
+      IF CHECK_DATES(SYSDATE, trip_date) = FALSE THEN
+        RAISE TRIP_ALREADY_STARTED_EXCEPTION;
+      END IF;
+      IF CHECK_FREE_SLOTS(id_wyc) = FALSE THEN
+        RAISE NO_FREE_SLOTS_EXCEPTION;
+      END IF;
+
+      INSERT INTO rezerwacje(id_wycieczki, id_osoby, status)
+      VALUES (id_wyc, id_os,'N')
+      RETURNING NR_REZERWACJI INTO nr_rezerwacji;
+
+      INSERT INTO REZERWACJE_LOG(ID_REZERWACJI, STATUS)
+      VALUES (nr_rezerwacji, 'N');
+
+      UPDATE WYCIECZKI w
+      SET w.LICZBA_WOLNYCH_MIEJSC = w.LICZBA_WOLNYCH_MIEJSC - 1
+      WHERE w.ID_WYCIECZKI = id_wyc;
+
+      EXCEPTION
+        WHEN TRIP_ALREADY_STARTED_EXCEPTION THEN
+          dbms_output.put_line('Passed date refers to the past!');
+        WHEN NO_FREE_SLOTS_EXCEPTION THEN
+          dbms_output.put_line('There are no free slots!');
+    END;
+
+    EXCEPTION
+      WHEN OTHERS THEN
+        ROLLBACK TO start_tran;
+        RAISE;
+  END;
+
+
+BEGIN
+  DODAJ_REZERWACJE(21, 23);
+  COMMIT;
+END;
