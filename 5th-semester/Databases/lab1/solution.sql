@@ -427,7 +427,7 @@ CREATE OR REPLACE PROCEDURE DOSTEPNE_WYCIECZKI_PROC(kraj varchar2, data_od DATE,
      w.DATA,
      w.OPIS
     FROM WYCIECZKI w
-    WHERE w.KRAJ = kraj and w.LICZBA_MIEJSC > (SELECT count(*) FROM REZERWACJE r WHERE w.ID_WYCIECZKI = r.ID_WYCIECZKI and r.STATUS != 'A');
+    WHERE w.KRAJ = kraj and (w.DATA BETWEEN data_od AND data_do) and w.LICZBA_MIEJSC > (SELECT count(*) FROM REZERWACJE r WHERE w.ID_WYCIECZKI = r.ID_WYCIECZKI and r.STATUS != 'A');
   END;
 
 DECLARE
@@ -448,10 +448,153 @@ BEGIN
   CLOSE c_cursor;
 END;
 
-CREATE OR REPLACE FUNCTION CHECK_DATE(data_od DATE, data_do DATE)
+CREATE OR REPLACE FUNCTION CHECK_DATES(data_od DATE, data_do DATE)
 RETURN BOOLEAN IS
   BEGIN
     IF data_do >= data_od THEN RETURN TRUE;
     ELSE RETURN FALSE;
     END IF;
   END;
+
+
+
+
+
+
+
+
+
+--5
+
+--a
+
+CREATE OR REPLACE PROCEDURE DODAJ_REZERWACJE(id_wyc INT, id_osoby INT) IS
+  check_slots BOOLEAN;
+  trip_date DATE;
+  TRIP_ALREADY_STARTED_EXCEPTION EXCEPTION;
+  NO_FREE_SLOTS_EXCEPTION EXCEPTION;
+  BEGIN
+    SAVEPOINT start_tran;
+    BEGIN
+      SELECT w.DATA INTO trip_date FROM WYCIECZKI w WHERE w.ID_WYCIECZKI = id_wyc;
+      IF CHECK_DATES(SYSDATE, trip_date) = FALSE THEN
+        RAISE TRIP_ALREADY_STARTED_EXCEPTION;
+      END IF;
+      IF CHECK_DATES(SYSDATE, trip_date) = FALSE OR CHECK_FREE_SLOTS(id_wyc) = FALSE THEN
+        RAISE NO_FREE_SLOTS_EXCEPTION;
+      END IF;
+
+      INSERT INTO rezerwacje(id_wycieczki, id_osoby, status)
+      VALUES (id_wyc, id_osoby,'N');
+
+      EXCEPTION
+        WHEN TRIP_ALREADY_STARTED_EXCEPTION THEN
+          dbms_output.put_line('Passed date refers to the past!');
+        WHEN NO_FREE_SLOTS_EXCEPTION THEN
+          dbms_output.put_line('There are no free slots!');
+    END;
+
+    EXCEPTION
+      WHEN OTHERS THEN
+        ROLLBACK TO start_tran;
+        RAISE;
+  END;
+
+
+CREATE OR REPLACE FUNCTION CHECK_FREE_SLOTS(id_wyc INT)
+RETURN BOOLEAN IS
+  taken_slots_amount NUMBER := 0;
+  max_slots NUMBER := 0;
+  WYCIECZKA_EXISTS_ERROR EXCEPTION;
+  BEGIN
+    IF CHECK_WYCIECZKA_EXISTS(id_wyc) = FALSE THEN
+      RAISE WYCIECZKA_EXISTS_ERROR;
+    END IF;
+    SELECT count(*) INTO taken_slots_amount FROM REZERWACJE r WHERE r.ID_WYCIECZKI = id_wyc AND r.STATUS != 'A';
+    SELECT w.LICZBA_MIEJSC INTO max_slots FROM WYCIECZKI w WHERE w.ID_WYCIECZKI = id_wyc;
+    IF max_slots >= (taken_slots_amount + 1) THEN RETURN TRUE;
+    ELSE RETURN FALSE;
+    END IF;
+
+    EXCEPTION
+      WHEN WYCIECZKA_EXISTS_ERROR THEN
+        dbms_output.put_line('No such a ID_WYCIECZKI!');
+  END;
+
+
+BEGIN
+    DODAJ_REZERWACJE(21, 1);
+    COMMIT;
+END;
+
+
+--b
+
+CREATE OR REPLACE PROCEDURE ZMIEN_STATUS_REZERWACJI(id_rezerwacji INT, new_status CHAR) IS
+  NO_FREE_SLOTS_EXCEPTION EXCEPTION;
+  cur_status CHAR;
+  trip_id INT;
+  BEGIN
+    SAVEPOINT start_tran;
+    BEGIN
+      SELECT r.STATUS INTO cur_status FROM REZERWACJE r WHERE r.NR_REZERWACJI = id_rezerwacji;
+      SELECT r.ID_WYCIECZKI INTO trip_id FROM REZERWACJE r WHERE r.NR_REZERWACJI = id_rezerwacji;
+
+      IF (cur_status = 'A' AND new_status != 'A' AND CHECK_FREE_SLOTS(trip_id) = FALSE) THEN
+        RAISE NO_FREE_SLOTS_EXCEPTION;
+      ELSE
+        UPDATE REZERWACJE r
+        SET r.STATUS = new_status
+        WHERE r.NR_REZERWACJI = id_rezerwacji;
+      END IF;
+
+      EXCEPTION
+        WHEN NO_FREE_SLOTS_EXCEPTION THEN
+          dbms_output.put_line('There are no free slots!');
+    END;
+    EXCEPTION
+      WHEN OTHERS THEN
+        ROLLBACK TO start_tran;
+        RAISE;
+  END;
+
+BEGIN
+  ZMIEN_STATUS_REZERWACJI(10, 'Z');
+  COMMIT;
+END;
+
+
+--c
+
+CREATE OR REPLACE PROCEDURE ZMIEN_LICZBE_MIEJSC(id_wyc INT, l_miejsc INT) IS
+  NOT_ENOUGH_SLOTS_EXCEPTION EXCEPTION;
+  taken_slots INT := 0;
+  BEGIN
+    SAVEPOINT start_tran;
+    BEGIN
+      SELECT count(*) INTO taken_slots FROM REZERWACJE r WHERE r.ID_WYCIECZKI = id_wyc AND r.STATUS != 'A';
+
+      IF (l_miejsc >= taken_slots) THEN
+        UPDATE WYCIECZKI w
+        SET w.LICZBA_MIEJSC = l_miejsc
+        WHERE w.ID_WYCIECZKI = id_wyc;
+      ELSE
+        RAISE NOT_ENOUGH_SLOTS_EXCEPTION;
+      END IF;
+
+      EXCEPTION
+        WHEN NOT_ENOUGH_SLOTS_EXCEPTION THEN
+          dbms_output.put_line('There is not enough slots!');
+    END;
+    EXCEPTION
+      WHEN OTHERS THEN
+        ROLLBACK TO start_tran;
+        RAISE;
+  END;
+
+
+BEGIN
+  ZMIEN_LICZBE_MIEJSC(21, 5);
+  COMMIT;
+END;
+
