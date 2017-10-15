@@ -1,3 +1,4 @@
+//Code from PhD W. Funika site 
 #include <stdio.h>
 #include <gsl/gsl_ieee_utils.h>
 
