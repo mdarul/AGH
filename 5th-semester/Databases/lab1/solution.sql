@@ -863,3 +863,179 @@ BEGIN
   DODAJ_REZERWACJE(21, 23);
   COMMIT;
 END;
+
+
+
+
+
+
+
+
+
+--8 and 9
+
+CREATE OR REPLACE TRIGGER BEFORE_NOWA_REZERWACJA
+BEFORE INSERT
+  ON REZERWACJE
+FOR EACH ROW
+  DECLARE
+    wyc WYCIECZKI%ROWTYPE;
+  BEGIN
+    dbms_output.put_line('running before trigger');
+    SELECT * INTO wyc FROM WYCIECZKI w WHERE w.ID_WYCIECZKI = :new.ID_WYCIECZKI;
+
+    IF SYSDATE > wyc.DATA THEN
+        raise_application_error(-20021, 'trip has already started');
+    END IF;
+    IF wyc.LICZBA_WOLNYCH_MIEJSC = 0 THEN
+        raise_application_error(-20022, 'no free slots left');
+    END IF;
+  END;
+
+
+CREATE OR REPLACE TRIGGER AFTER_NOWA_REZERWACJA
+AFTER INSERT
+  ON REZERWACJE
+FOR EACH ROW
+  DECLARE
+    wyc WYCIECZKI%ROWTYPE;
+  BEGIN
+    dbms_output.put_line('running after trigger');
+    SELECT * INTO wyc FROM WYCIECZKI w WHERE w.ID_WYCIECZKI = :new.ID_WYCIECZKI;
+    INSERT INTO REZERWACJE_LOG(ID_REZERWACJI, STATUS)
+    VALUES (:new.NR_REZERWACJI, 'N');
+    UPDATE WYCIECZKI w
+    SET w.LICZBA_WOLNYCH_MIEJSC = w.LICZBA_WOLNYCH_MIEJSC - 1
+    WHERE w.ID_WYCIECZKI = wyc.ID_WYCIECZKI;
+  END;
+
+
+CREATE OR REPLACE PROCEDURE DODAJ_REZERWACJE(id_wyc INT, id_os INT) IS
+  BEGIN
+    SAVEPOINT start_tran;
+    BEGIN
+      INSERT INTO REZERWACJE(id_wycieczki, id_osoby, status)
+      VALUES (id_wyc, id_os,'N');
+    END;
+    EXCEPTION
+      WHEN OTHERS THEN
+        ROLLBACK TO start_tran;
+        RAISE;
+  END;
+
+
+BEGIN
+  DODAJ_REZERWACJE(21, 61);
+END;
+
+
+CREATE OR REPLACE PROCEDURE ZMIEN_STATUS_REZERWACJI(id_rez INT, new_status CHAR) IS
+  BEGIN
+    SAVEPOINT start_tran;
+    BEGIN
+        UPDATE REZERWACJE r
+        SET r.STATUS = new_status
+        WHERE r.NR_REZERWACJI = id_rez;
+    END;
+    EXCEPTION
+      WHEN OTHERS THEN
+        ROLLBACK TO start_tran;
+        RAISE;
+  END;
+  
+  
+  
+  
+CREATE OR REPLACE TRIGGER BEFORE_ZMIANA_REZERWACJI
+BEFORE UPDATE
+  ON REZERWACJE
+FOR EACH ROW
+  DECLARE
+    free_slots INT;
+  BEGIN
+    SELECT w.LICZBA_WOLNYCH_MIEJSC INTO free_slots FROM WYCIECZKI w WHERE w.ID_WYCIECZKI = :OLD.ID_WYCIECZKI;
+    IF (:OLD.STATUS = 'A' AND :NEW.STATUS != 'A' AND free_slots <= 0) THEN
+        raise_application_error(-20022, 'no free slots left');
+    END IF;
+  END;
+  
+  
+  
+CREATE OR REPLACE TRIGGER AFTER_ZMIANA_REZERWACJI
+AFTER UPDATE
+  ON REZERWACJE
+FOR EACH ROW
+    BEGIN
+        IF (:OLD.STATUS != 'A' AND :NEW.STATUS = 'A') THEN
+            UPDATE WYCIECZKI w
+            SET w.LICZBA_WOLNYCH_MIEJSC = w.LICZBA_WOLNYCH_MIEJSC + 1
+            WHERE w.ID_WYCIECZKI = :OLD.ID_WYCIECZKI;
+        ELSE
+            IF (:OLD.STATUS = 'A' AND :NEW.STATUS != 'A') THEN
+              UPDATE WYCIECZKI w
+              SET w.LICZBA_WOLNYCH_MIEJSC = w.LICZBA_WOLNYCH_MIEJSC - 1
+              WHERE w.ID_WYCIECZKI = :OLD.ID_WYCIECZKI;
+            END IF;
+        END IF;
+        
+        INSERT INTO REZERWACJE_LOG(ID_REZERWACJI, STATUS)
+        VALUES (:NEW.NR_REZERWACJI, :NEW.STATUS);
+    END;
+  
+  
+BEGIN
+    ZMIEN_STATUS_REZERWACJI(41, 'Z');
+END;
+
+
+
+
+CREATE OR REPLACE TRIGGER BEFORE_USUNIECIE_REZERWACJI
+BEFORE DELETE
+  ON REZERWACJE
+  BEGIN
+    raise_application_error(-20023, 'you can''t delete reservation');
+  END;
+
+
+DELETE FROM REZERWACJE
+WHERE NR_REZERWACJI = 166;
+
+
+CREATE OR REPLACE TRIGGER BEFORE_ZMIANA_LICZBY_MIEJSC
+BEFORE UPDATE
+    ON WYCIECZKI
+FOR EACH ROW
+    DECLARE
+        taken_slots INT := 0;
+    BEGIN
+        SELECT count(*) INTO taken_slots FROM REZERWACJE r WHERE r.ID_WYCIECZKI = :OLD.ID_WYCIECZKI AND r.STATUS != 'A';
+        IF (:NEW.LICZBA_MIEJSC < taken_slots) THEN
+            raise_application_error(-20022, 'not enough free slots');
+        END IF;
+    END;
+
+
+CREATE OR REPLACE PROCEDURE ZMIEN_LICZBE_MIEJSC(id_wyc INT, l_miejsc INT) IS
+      taken_slots INT := 0;
+      max_slots INT;
+  BEGIN
+    SAVEPOINT start_tran;
+    BEGIN
+        SELECT count(*) INTO taken_slots FROM REZERWACJE r WHERE r.ID_WYCIECZKI = id_wyc AND r.STATUS != 'A';
+        SELECT w.LICZBA_MIEJSC INTO max_slots FROM WYCIECZKI w WHERE w.ID_WYCIECZKI = id_wyc;
+        UPDATE WYCIECZKI w
+        SET w.LICZBA_WOLNYCH_MIEJSC = l_miejsc - taken_slots, w.LICZBA_MIEJSC = l_miejsc
+        WHERE w.ID_WYCIECZKI = id_wyc;
+    END;
+    EXCEPTION
+        WHEN OTHERS THEN
+           ROLLBACK TO start_tran;
+           RAISE;
+  END;
+
+
+BEGIN
+  ZMIEN_LICZBE_MIEJSC(21, 5);
+  COMMIT;
+END;
