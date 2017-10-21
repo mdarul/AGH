@@ -67,12 +67,25 @@ public class Test {
         catch (InterruptedException e) {e.printStackTrace();}
     }
 
+    private static void diningPhilosophers3() {
+        BinarySemaphore[] philosophersSemaphore = new BinarySemaphore[5];
+        for(int i=0; i < 5; i++) philosophersSemaphore[i] = new BinarySemaphore();
+
+        Philosopher3[] philosophers = new Philosopher3[5];
+        for(int i=0; i < 5; i++) philosophers[i] = new Philosopher3(philosophersSemaphore, i);
+
+        for(int i=0; i < 5; i++) philosophers[i].start();
+        try {for(int i=0; i < 5; i++) philosophers[i].join();}
+        catch (InterruptedException e) {e.printStackTrace();}
+    }
+
     public static void main(String[] args) {
 //        zad1();
 //        testCountingSemaphore();
 //        testCountingSemaphoreWithMutexes();
 //        diningPhilosophers1();
-        diningPhilosophers2();
+//        diningPhilosophers2();
+        diningPhilosophers3();
 
     }
 }

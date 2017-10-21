@@ -3,3 +3,8 @@ Musimy zastosować while, ponieważ gdybyśmy użyli if, to nie sprawdzilibyśm
 
 z.3
 tak, semafor binarny (mutex) to semafor licznikowy z maksymalną liczbą obsługiwanych sygnałów na raz równą 1
+
+z.5
+1) rozwiązane z użyciem kelnera, który obsługuje filozofów - podaje i zabiera widelce parami (taki centralny zarządca zasobów), dzięki czemu zapobiega zakleszczeniom.
+2) rozwiązanie z użyciem hierarchii zasobów - przyjmujemy zasadę, iż filozof zawsze najpierw próbuje sięgnąć po widelec o mniejszym priorytecie (u nas - indeksie), a dopiero potem po ten o większym. Dzięki temu zapobiegniemy zakleszczeniom, ponieważ w najgorszym wypadku będą zajęte wszystkie widelce poza ostatnim (bo ostatni filozof nie będzie mógł wziąć jako pierwszego widelca o indeksie 0)
+3) każdy z filozofów stara się wziąć oba widelce, próbuje zająć najpierw jeden, a potem drugi widelec. Może tu powstać sytuacja zakleszczeń
