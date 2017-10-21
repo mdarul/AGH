@@ -15,7 +15,7 @@ public class CountingSemaphore {
     }
 
     public synchronized void countingSemaphoreWait() throws InterruptedException {
-        while(this.signals == this.max_signals - 1) wait();
+        while(this.signals == this.max_signals) wait();
         this.signals++;
         this.notify();
     }

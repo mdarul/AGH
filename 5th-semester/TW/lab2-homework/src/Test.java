@@ -9,23 +9,56 @@ public class Test {
 
     private static void testCountingSemaphore() {
         int n = 10;
+        int m = 4*n;
         CountingSemaphore countingSemaphore = new CountingSemaphore(n);
-        CountingSemaphoreThread[] threads = new CountingSemaphoreThread[3*n];
+        CountingSemaphoreThread[] threads = new CountingSemaphoreThread[m];
 
-        for(int i=0; i < 3*n; i++) {
+        for(int i=0; i < m; i++) {
             threads[i] = new CountingSemaphoreThread(countingSemaphore, i);
         }
 
-        for(int i=0; i < 3*n; i++) {
+        for(int i=0; i < m; i++) {
             threads[i].start();
         }
         try {
-            for(int i=0; i < 3*n; i++) threads[i].join();
+            for(int i=0; i < m; i++) threads[i].join();
         }
         catch (InterruptedException e) {e.printStackTrace();}
     }
 
+    private static void testCountingSemaphoreWithMutexes() {
+        int n = 10;
+        int m = 4*n;
+        CountingSemaphoreWithMutexes semaphore = new CountingSemaphoreWithMutexes(n);
+        CountingSemaphoreWithMutexesThread[] threads = new CountingSemaphoreWithMutexesThread[m];
+
+        for(int i=0; i < m; i++) {
+            threads[i] = new CountingSemaphoreWithMutexesThread(semaphore, i);
+        }
+
+        for(int i=0; i < m; i++) {
+            threads[i].start();
+        }
+        try {
+            for(int i=0; i < m; i++) threads[i].join();
+        }
+        catch (InterruptedException e) {e.printStackTrace();}
+    }
+
+    private static void diningPhilosophers1() {
+        Waiter waiter = new Waiter();
+        Philosopher1[] philosophers = new Philosopher1[5];
+        for(int i=0; i < 5; i++) philosophers[i] = new Philosopher1(i, waiter);
+
+        for(int i=0; i < 5; i++) philosophers[i].start();
+        try {for(int i=0; i < 5; i++) philosophers[i].join();}
+        catch (InterruptedException e) {e.printStackTrace();}
+    }
+
     public static void main(String[] args) {
-        testCountingSemaphore();
+//        zad1();
+//        testCountingSemaphore();
+//        testCountingSemaphoreWithMutexes();
+        diningPhilosophers1();
     }
 }

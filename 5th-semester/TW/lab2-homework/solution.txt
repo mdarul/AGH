@@ -1,5 +1,5 @@
-z.1.2
-Teoretycznie może zajść sytuacja, w której w wypadku zwolnienia
+z.2
+Musimy zastosować while, ponieważ gdybyśmy użyli if, to nie sprawdzilibyśmy warunku po obudzeniu wątku przez notify, a wartość tego warunku mogłaby zostać w międzyczasie zmieniona przez inny wątek
 
 z.3
 tak, semafor binarny (mutex) to semafor licznikowy z maksymalną liczbą obsługiwanych sygnałów na raz równą 1
