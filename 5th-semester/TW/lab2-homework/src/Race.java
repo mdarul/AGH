@@ -12,16 +12,21 @@ public class Race {
         counter--;
     }
 
-    public void startRace() throws InterruptedException {
+    public void startRace() {
         BinarySemaphore binarySemaphore = new BinarySemaphore();
-        ThreadIncrement t1 = new ThreadIncrement(binarySemaphore);
-        ThreadDecrement t2 = new ThreadDecrement(binarySemaphore);
+        int n = (int)1e6;
+        ThreadIncrement t1 = new ThreadIncrement(binarySemaphore, n);
+        ThreadDecrement t2 = new ThreadDecrement(binarySemaphore, n);
 
         t1.start();
         t2.start();
 
-        t1.join();
-        t2.join();
+        try {
+            t1.join();
+            t2.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         System.out.println(counter);
     }

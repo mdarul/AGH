@@ -1,0 +1,5 @@
+z.1.2
+Teoretycznie może zajść sytuacja, w której w wypadku zwolnienia
+
+z.3
+tak, semafor binarny (mutex) to semafor licznikowy z maksymalną liczbą obsługiwanych sygnałów na raz równą 1

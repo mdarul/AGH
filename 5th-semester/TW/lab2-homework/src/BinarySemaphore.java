@@ -11,6 +11,7 @@ public class BinarySemaphore {
 
     public synchronized void binarySemaPhoreWait() throws InterruptedException {
         while(!this.mutexState) this.wait();
+//        if(!this.mutexState) this.wait();
         this.mutexState = false;
     }
 }
