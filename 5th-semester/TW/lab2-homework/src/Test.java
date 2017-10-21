@@ -55,10 +55,24 @@ public class Test {
         catch (InterruptedException e) {e.printStackTrace();}
     }
 
+    private static void diningPhilosophers2() {
+        BinarySemaphore[] forks = new BinarySemaphore[5];
+        for(int i=0; i < 5; i++) forks[i] = new BinarySemaphore();
+
+        Philosopher2[] philosophers = new Philosopher2[5];
+        for(int i=0; i < 5; i++) philosophers[i] = new Philosopher2(forks, i);
+
+        for(int i=0; i < 5; i++) philosophers[i].start();
+        try {for(int i=0; i < 5; i++) philosophers[i].join();}
+        catch (InterruptedException e) {e.printStackTrace();}
+    }
+
     public static void main(String[] args) {
 //        zad1();
 //        testCountingSemaphore();
 //        testCountingSemaphoreWithMutexes();
-        diningPhilosophers1();
+//        diningPhilosophers1();
+        diningPhilosophers2();
+
     }
 }

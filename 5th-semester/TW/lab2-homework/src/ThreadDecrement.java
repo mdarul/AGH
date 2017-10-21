@@ -15,11 +15,8 @@ public class ThreadDecrement extends Thread {
     @Override
     public void run() {
         for(int i = 0; i < n; i++) {
-            try {
-                binarySemaphore.binarySemaPhoreWait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            try {binarySemaphore.binarySemaPhoreWait();}
+            catch (InterruptedException e) {e.printStackTrace();}
             race.decrementCounter();
             binarySemaphore.binarySemaPhoreSignal();
         }
