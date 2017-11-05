@@ -23,23 +23,26 @@ long double absolute(long double x) {
     return x >= 0 ? x : (x * (-1));
 }
 
-long double find_root(Function *fun, long double a, long double b) {
-    long double x = (a+b)/2;
-    if(absolute(get_value(fun, x)) < EPSILON || absolute(a-b) < EPSILON) return x;
-    if(get_value(fun, x) < 0 && get_value(fun, a) < 0) return find_root(fun, x, b);
-    else return find_root(fun, a, x);
+Function *derivatie(Function *fun1) {
+    Function *fun2 = create_function(0, fun1->a * 2, fun1->b);
+    return fun2;
+}
+
+long double find_root(Function *fun, long double x0) {
+    long double x1 = x0 - get_value(fun, x0) / get_value(derivatie(fun), x0);
+    if(absolute(get_value(fun, x1)) < EPSILON || absolute(x0 - x1) < EPSILON) return x1;
+    else return find_root(fun, x1);
 }
 
 int main() {
     char a[10], b[10], c[10];
-
+    long double A=0, B=2;
     scanf("%s%s%s", a, b, c);
     Function *fun1 = create_function((long double)strtol(a, NULL, 0), (long double)strtol(b, NULL, 0), (long double)strtol(c, NULL, 0));
-    printf("%Lf\n", find_root(fun1, 2, 3));
+    if(get_value(fun1, A) * fun1->a > 0) printf("%Lf\n", find_root(fun1, A)); // sprawdzamy, czy funkcja i jej druga pochodna mają te same znaki (2a ma ten sam znak co a, więc nie mnożyłem)
+    else printf("%Lf\n", find_root(fun1, B));
 
-    scanf("%s%s%s", a, b, c);
-    Function *fun2 = create_function((long double)strtol(a, NULL, 0), (long double)strtol(b, NULL, 0), (long double)strtol(c, NULL, 0));
-    printf("%Lf\n", find_root(fun2, 0, 2));
 
     return 0;
 }
+

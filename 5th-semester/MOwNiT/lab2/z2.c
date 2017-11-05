@@ -23,11 +23,10 @@ long double absolute(long double x) {
     return x >= 0 ? x : (x * (-1));
 }
 
-long double find_root(Function *fun, long double a, long double b) {
-    long double x = (a+b)/2;
-    if(absolute(get_value(fun, x)) < EPSILON || absolute(a-b) < EPSILON) return x;
-    if(get_value(fun, x) < 0 && get_value(fun, a) < 0) return find_root(fun, x, b);
-    else return find_root(fun, a, x);
+long double find_root(Function *fun, long double x1, long double x2) {
+    long double x3 = x2 - (get_value(fun, x2) * (x2-x1))/(get_value(fun, x2) - get_value(fun, x1));
+    if(absolute(get_value(fun, x3)) < EPSILON || absolute(x1-x2) < EPSILON) return x3;
+    else return find_root(fun, x2, x3);
 }
 
 int main() {
@@ -37,9 +36,11 @@ int main() {
     Function *fun1 = create_function((long double)strtol(a, NULL, 0), (long double)strtol(b, NULL, 0), (long double)strtol(c, NULL, 0));
     printf("%Lf\n", find_root(fun1, 2, 3));
 
+    // for x^2-2x+1 it throws SIGSEV because there is a local maximum in this interval, which means parallel secant (towards 0X), what finally brings us to dividing by 0
     scanf("%s%s%s", a, b, c);
     Function *fun2 = create_function((long double)strtol(a, NULL, 0), (long double)strtol(b, NULL, 0), (long double)strtol(c, NULL, 0));
     printf("%Lf\n", find_root(fun2, 0, 2));
 
     return 0;
 }
+
