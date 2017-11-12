@@ -36,9 +36,9 @@ long double find_root(Function *fun, long double x0) {
 
 int main() {
     char a[10], b[10], c[10];
-    long double A=0, B=2;
-    scanf("%s%s%s", a, b, c);
-    Function *fun1 = create_function((long double)strtol(a, NULL, 0), (long double)strtol(b, NULL, 0), (long double)strtol(c, NULL, 0));
+    long double A=2, B=3;
+    Function *fun1 = create_function(1, 0, -5);
+
     if(get_value(fun1, A) * fun1->a > 0) printf("%Lf\n", find_root(fun1, A)); // sprawdzamy, czy funkcja i jej druga pochodna mają te same znaki (2a ma ten sam znak co a, więc nie mnożyłem)
     else printf("%Lf\n", find_root(fun1, B));
 

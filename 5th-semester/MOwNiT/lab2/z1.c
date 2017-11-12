@@ -33,13 +33,11 @@ long double find_root(Function *fun, long double a, long double b) {
 int main() {
     char a[10], b[10], c[10];
 
-    scanf("%s%s%s", a, b, c);
-    Function *fun1 = create_function((long double)strtol(a, NULL, 0), (long double)strtol(b, NULL, 0), (long double)strtol(c, NULL, 0));
+
+    Function *fun1 = create_function(1, 0, -5);
     printf("%Lf\n", find_root(fun1, 2, 3));
 
-    scanf("%s%s%s", a, b, c);
-    Function *fun2 = create_function((long double)strtol(a, NULL, 0), (long double)strtol(b, NULL, 0), (long double)strtol(c, NULL, 0));
-    printf("%Lf\n", find_root(fun2, 0, 2));
+  
 
     return 0;
 }
