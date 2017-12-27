@@ -50,7 +50,7 @@ int main() {
     double *values = malloc(sizeof(double)*(intervals_amount+1));
 
     double proper_value_fun1 = 0.33333333333, proper_value_fun2 = 2;
-    for(int i=1; i <= intervals_amount; i++) values[i] =  fabs(proper_value_fun1 - monte_carlo_interval(x0, x1, y0, y1, N, i, &calculate_fun1));
+    for(int i=1; i <= intervals_amount; i++) values[i] =  fabs(proper_value_fun1 - monte_carlo_interval(x0, x1, y0, y1, N, i, &calculate_fun2));
 
     FILE *gnuplot = popen("gnuplot", "w");
     fprintf(gnuplot, "plot '-' with lines\n");
