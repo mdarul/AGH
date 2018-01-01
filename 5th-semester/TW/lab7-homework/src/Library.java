@@ -1,8 +1,8 @@
+import java.util.Random;
 import java.util.concurrent.locks.*;
 
 class Library {
     private final ReentrantLock writingLock = new ReentrantLock();
-    private final Condition notWriting = writingLock.newCondition();
     private final Condition notReading = writingLock.newCondition();
 
     private final int[] tab = new int [10];
@@ -13,12 +13,23 @@ class Library {
     }
 
     public void read(int readerNumber, int index) throws InterruptedException {
-        while(writingLock.isLocked()) notWriting.await();
+        synchronized (writingLock) {
+            while (writingLock.isLocked())
+                writingLock.wait();
+        }
         readersAmount++;
         System.out.println("Reader " + readerNumber + ": reading value: " + tab[index] + " from index: " + index);
         readersAmount--;
+
+        Random random = new Random();
+        try {Thread.sleep(1000 * (random.nextInt(2) + 1));}
+        catch(Exception e) {}
+
         System.out.println("Reader " + readerNumber + ": reading value: " + tab[index] + " from index: " + index + " - finished");
-        if(writingLock.isLocked()) notReading.signal();
+        synchronized (writingLock){
+            if(writingLock.isLocked())
+                notReading.signal();
+        }
     }
 
     public void write(int writerNumber, int index, int value) throws InterruptedException {
@@ -28,9 +39,16 @@ class Library {
             writersAmount++;
             System.out.println("Writer " + writerNumber + ": writing value: " + value + " on index: " + index);
             tab[index] = value;
+
+            Random random = new Random();
+            try {Thread.sleep(1000 * (random.nextInt(2) + 1));}
+            catch(Exception e) {}
+
             System.out.println("Writer " + writerNumber + ": writing value: " + value + " on index: " + index + " - finished");
             writersAmount--;
-            notWriting.signal();
+            synchronized (writingLock) {
+                writingLock.notifyAll();
+            }
         } finally {
             writingLock.unlock();
         }
