@@ -1,0 +1,26 @@
+import java.util.Random;
+
+/**
+ * Created by michal on 01/01/18.
+ */
+public class Reader extends Thread {
+    int readerNumber;
+    Library library;
+
+    public Reader(int number, Library library) {
+        this.readerNumber = number;
+        this.library = library;
+    }
+
+    @Override
+    public void run() {
+        Random random = new Random();
+        for(int i=0; i<3; i++) {
+            int index = random.nextInt(10);
+            try {library.read(readerNumber, index);}
+            catch (InterruptedException e) {e.printStackTrace();}
+            try {Thread.sleep(1000 * random.nextInt(5));}
+            catch(Exception e) {}
+        }
+    }
+}
