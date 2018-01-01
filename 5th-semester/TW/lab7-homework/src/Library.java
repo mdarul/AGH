@@ -4,6 +4,7 @@ import java.util.concurrent.locks.*;
 class Library {
     private final ReentrantLock writingLock = new ReentrantLock();
     private final Condition notReading = writingLock.newCondition();
+    private final Condition notWriting = writingLock.newCondition();
 
     private final int[] tab = new int [10];
     private int readersAmount = 0, writersAmount = 0;
@@ -17,19 +18,21 @@ class Library {
             while (writingLock.isLocked())
                 writingLock.wait();
         }
+
+
         readersAmount++;
         System.out.println("Reader " + readerNumber + ": reading value: " + tab[index] + " from index: " + index);
-        readersAmount--;
 
         Random random = new Random();
         try {Thread.sleep(1000 * (random.nextInt(2) + 1));}
         catch(Exception e) {}
+        readersAmount--;
+
+        writingLock.lock();
+        try {notReading.signal();}
+        finally {writingLock.unlock();}
 
         System.out.println("Reader " + readerNumber + ": reading value: " + tab[index] + " from index: " + index + " - finished");
-        synchronized (writingLock){
-            if(writingLock.isLocked())
-                notReading.signal();
-        }
     }
 
     public void write(int writerNumber, int index, int value) throws InterruptedException {

@@ -20,10 +20,6 @@ public class Writer extends Thread {
             int value = random.nextInt(10);
             try {library.write(writerNumber, index, value);}
             catch (InterruptedException e) {e.printStackTrace();}
-            if(i != 2) {
-                try {Thread.sleep(1000 * (random.nextInt(4) + 1));}
-                catch(Exception e) {}
-            }
         }
     }
 }

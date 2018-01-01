@@ -19,10 +19,6 @@ public class Reader extends Thread {
             int index = random.nextInt(10);
             try {library.read(readerNumber, index);}
             catch (InterruptedException e) {e.printStackTrace();}
-            if(i != 2) {
-                try {Thread.sleep(1000 * (random.nextInt(4) + 1));}
-                catch(Exception e) {}
-            }
         }
     }
 }
