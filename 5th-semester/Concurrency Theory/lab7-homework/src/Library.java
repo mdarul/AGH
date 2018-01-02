@@ -1,4 +1,3 @@
-import java.util.Random;
 import java.util.concurrent.locks.*;
 
 class Library {
@@ -14,24 +13,17 @@ class Library {
     }
 
     public void read(int readerNumber, int index) throws InterruptedException {
-        synchronized (writingLock) {
-            while (writingLock.isLocked())
-                writingLock.wait();
-        }
-
+        writingLock.lock();
+        try {while (writersAmount != 0) notWriting.await();}
+        finally {writingLock.unlock();}
 
         readersAmount++;
         System.out.println("Reader " + readerNumber + ": reading value: " + tab[index] + " from index: " + index);
-
-        Random random = new Random();
-        try {Thread.sleep(1000 * (random.nextInt(2) + 1));}
-        catch(Exception e) {}
         readersAmount--;
 
         writingLock.lock();
-        try {notReading.signal();}
+        try {notReading.signalAll();}
         finally {writingLock.unlock();}
-
         System.out.println("Reader " + readerNumber + ": reading value: " + tab[index] + " from index: " + index + " - finished");
     }
 
@@ -43,16 +35,11 @@ class Library {
             System.out.println("Writer " + writerNumber + ": writing value: " + value + " on index: " + index);
             tab[index] = value;
 
-            Random random = new Random();
-            try {Thread.sleep(1000 * (random.nextInt(2) + 1));}
-            catch(Exception e) {}
-
             System.out.println("Writer " + writerNumber + ": writing value: " + value + " on index: " + index + " - finished");
             writersAmount--;
-            synchronized (writingLock) {
-                writingLock.notifyAll();
-            }
-        } finally {
+        }
+        finally {
+            notWriting.signalAll();
             writingLock.unlock();
         }
     }

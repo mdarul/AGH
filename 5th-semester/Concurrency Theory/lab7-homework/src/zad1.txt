@@ -1,0 +1,61 @@
+Porównywałem czas wykonywania operacji dla jednej listy bez locków (realizowanej za pomocą jednego wątku) oraz odpowiadających jej 4 wątków.
+Za "koszt czasowy" operacji przyjąłem długość jej wykonywania modyfikowaną za pomocą metordy Thread.sleep().
+Każdą operację zmierzyłem dla trzech wartości w funkcji sleep() : 0ms (czyli bazowa), 5ms oraz 10ms.
+
+Add
+Przy każdym pojedynczym przejściu czekałem odpowiednią ilość czasu. Dla operacji dodawania 100 elementów otrzymałem następujące wyniki:
+1) 0ms
+Non-parallel list add time: 2ms
+Parallel list add time: 7ms
+2) 5ms
+Non-parallel list add time: 25390ms
+Parallel list add time: 6915ms
+3) 10ms
+Non-parallel list add time: 49723ms
+Parallel list add time: 13634ms
+Wnioski:
+Dla znikomego czasu operacji (czyli czasu bazowego) zrównoleglenie nie okazało się być przydatne. Dzieje się tak dlatego,
+że operujemy na względnie niewielkiej liczbie elementów oraz dlatego, że czas przetwarzania elementów jest bardzo krótki (
+tylko jedna operacja przypisania). W miarę zwiększenia czasu widzimy, że czas przetwarzania równoległego znacząco maleje
+w stosunku do czasu przetworzenia jednowątkowego. Można również doświadczalnie zauważyć, że stosunek czasu non-parallel
+do parallel zbliża się do 1/4, co zgadzałoby się z teorią - mamy bowiem 4 wątki wykonujące tą samą operację, oraz 4
+rdzenie w komputerze, na którym wykonywane były obliczenia.
+
+Contains
+Założenia obliczeń (ilość elementów, czas) są analogicznie. W obu listach szukamy 4 elementów symetrycznie rozłożonych
+w listach (0, 33, 66, 99).
+1) 0ms
+Non-parallel list contains time: 1ms
+Parallel list contains time: 5ms
+2) 5ms
+Non-parallel list contains time: 1030ms
+Parallel list contains time: 528ms
+3) 10ms
+Non-parallel list contains time: 2054ms
+Parallel list contains time: 1072ms
+Wnioski:
+Dla bazowego czasu operacji zachodzi to samo zjawisko, co przy 'Add'. Dla wyższych kosztów możemy zauważyć, że czas
+wykonanania operacji równolegle jest dwukrotnie większy od czasu jednowątkowego - jest to spowodowane tym, że pojedynczy
+wątek musi przejść przez - w tym wypadku - dwie długości listy (0 + 1/3 dystansu + 2/3 dystansu + cały dystans), podczas
+gdy 4 wątki wykonywane współbieżnie idą mniej-więcej równo (z dokładnością co do aktualnie lockowanych elementów) i
+przechodzą przez listę jeden raz. Czas wykonywania programu jest więc zgodny z przedstawioną teorią (tj. obliczeniami
+pokonywanych dystansów).
+Gdybyśmy jednak postawili problem inaczej, przykładowo gdybyśmy szukali jednej konkretnej wartości, to rozwiązanie
+współbieżne nie byłoby już (w wypadku listy) tak wydajne - i tak musielibyśmy przejść przez całą listę (czy to jednym wątkiem, czy czterema),
+a "przeskakiwanie" pomiędzy wątkami tylko spowalniałoby nasze obliczenia (choć w miarę wzrostu kosztu przejść ta różnica
+przestaje być istotna).
+
+Delete
+1) 0ms
+Non-parallel list delete time: 1ms
+Parallel list delete time: 5ms
+2) 5ms
+Non-parallel list delete time: 979ms
+Parallel list delete time: 517ms
+3) 10ms
+Non-parallel list delete time: 1950ms
+Parallel list delete time: 1010ms
+Wnioski:
+Wnioski wynikające z tego punktu są w zasadzie identyczne z tymi, z poprzedniego (tj. z 'Contains'), bowiem sytuacje te
+są analogiczne - w ten sam sposób przechodzimy po listach, a jedyne różnice polegają na malejącej ilości elementów oraz
+większej ilości używanych locków (do maksymalnie 3 locków nałożonych jednocześnie przez jeden wątek).
