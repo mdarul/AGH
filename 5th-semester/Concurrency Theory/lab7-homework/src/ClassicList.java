@@ -38,8 +38,8 @@ public class ClassicList {
         else {
             Node tmp = first;
             while(tmp.next != null) {
-            try {Thread.sleep(10);}
-            catch (InterruptedException e) {e.printStackTrace();}
+//            try {Thread.sleep(10);}
+//            catch (InterruptedException e) {e.printStackTrace();}
                 if(tmp.next.object.equals(object)) {
                     tmp.next = tmp.next.next;
                     return;

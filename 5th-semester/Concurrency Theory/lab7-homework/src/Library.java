@@ -17,10 +17,10 @@ class Library {
         try {while (writersAmount != 0) notWriting.await();}
         finally {writingLock.unlock();}
 
-        readersAmount++;
+        synchronized (this) {readersAmount++;}
         System.out.println("Reader " + readerNumber + ": reading value: " + tab[index] + " from index: " + index);
-        readersAmount--;
-
+        Thread.sleep(15);
+        synchronized (this) {readersAmount--;}
         writingLock.lock();
         try {notReading.signalAll();}
         finally {writingLock.unlock();}
@@ -33,8 +33,8 @@ class Library {
             while (readersAmount != 0) notReading.await();
             writersAmount++;
             System.out.println("Writer " + writerNumber + ": writing value: " + value + " on index: " + index);
+            Thread.sleep(15);
             tab[index] = value;
-
             System.out.println("Writer " + writerNumber + ": writing value: " + value + " on index: " + index + " - finished");
             writersAmount--;
         }

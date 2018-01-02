@@ -111,15 +111,17 @@ public class Main {
 
     public static void main(String[] args) {
         //task 1
-        zad1_1();
+//        zad1_1();
+
         //task 2
-//        try {
-//            System.out.println("starting...");
-//            long startTime = System.currentTimeMillis();
-//            zad1_2(1, 10);
-//            long stopTime = System.currentTimeMillis();
-//            System.out.println((stopTime - startTime) / 1e3);
-//        }
-//        catch (InterruptedException e) {e.printStackTrace();}
+        try {
+            int readersAmount = 0, writersAmount = 1;
+            System.out.println("starting...");
+            long startTime = System.currentTimeMillis();
+            zad1_2(readersAmount, writersAmount);
+            long stopTime = System.currentTimeMillis();
+            System.out.println(readersAmount + " " + writersAmount + " " + (stopTime - startTime));
+        }
+        catch (InterruptedException e) {e.printStackTrace();}
     }
 }

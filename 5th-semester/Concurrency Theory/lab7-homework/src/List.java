@@ -69,8 +69,8 @@ public class List {
         else {
             Node listIterator = first;
             while(listIterator.next != null) {
-            try {Thread.sleep(10);}
-            catch (InterruptedException e) {e.printStackTrace();}
+//            try {Thread.sleep(10);}
+//            catch (InterruptedException e) {e.printStackTrace();}
                 listIterator.next.lock.lock();
                 if(listIterator.next.object.equals(object)) {
                     synchronized (this) {if(listIterator.next.next != null) listIterator.next.next.lock.lock();}
